@@ -35,7 +35,6 @@ jobs:
         env:
           PATH: /home/runner/.local/bin:/usr/local/bin:/usr/bin:/bin
         run: |
-          buildozer android clean
           buildozer android debug
 
       - name: Upload APK
