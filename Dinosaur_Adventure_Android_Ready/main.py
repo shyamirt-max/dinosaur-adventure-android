@@ -598,11 +598,15 @@ SCRIPT_DIR = (
 # Stable, writable save location for desktop and Android.
 # python-for-android exposes app_storage_path() as the app-private Android folder.
 def get_save_root():
-    try:
-        from android.storage import app_storage_path
-        return os.path.join(app_storage_path(), "dinosaur_adventure")
-    except (ImportError, OSError):
-        return os.path.join(os.path.expanduser("~"), ".dinosaur_adventure")
+    android_private = os.environ.get("ANDROID_PRIVATE")
+
+    if android_private:
+        return os.path.join(android_private, "dinosaur_adventure")
+
+    return os.path.join(
+        os.path.expanduser("~"),
+        ".dinosaur_adventure",
+    )
 
 SAVE_ROOT = get_save_root()
 os.makedirs(SAVE_ROOT, exist_ok=True)
