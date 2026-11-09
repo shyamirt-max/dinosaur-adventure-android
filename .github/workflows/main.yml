@@ -19,23 +19,24 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            git zip unzip openjdk-17-jdk python3-pip python3-venv \
-            python3-virtualenv autoconf libtool pkg-config zlib1g-dev \
-            libncurses5-dev libncursesw5-dev libtinfo6 cmake \
-            libffi-dev libssl-dev automake autopoint gettext
+            git zip unzip openjdk-17-jdk python3-pip \
+            python3-virtualenv autoconf libtool pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev \
+            libtinfo6 cmake libffi-dev libssl-dev \
+            automake autopoint gettext
 
-      - name: Create Python build environment
+      - name: Install Buildozer
         run: |
-          python3 -m venv "$HOME/buildozer-venv"
-          "$HOME/buildozer-venv/bin/python" -m pip install --upgrade pip wheel setuptools
-          "$HOME/buildozer-venv/bin/pip" install buildozer cython==0.29.36
+          python3 -m pip install --user --break-system-packages \
+            buildozer cython==0.29.36
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Build Android APK
         working-directory: Dinosaur_Adventure_Android_Ready
         env:
-          PATH: /home/runner/buildozer-venv/bin:/usr/local/bin:/usr/bin:/bin
+          PATH: /home/runner/.local/bin:/usr/local/bin:/usr/bin:/bin
         run: |
-          yes | buildozer android debug
+          buildozer android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
