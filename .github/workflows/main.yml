@@ -8,20 +8,34 @@ permissions:
 
 jobs:
   build-android:
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install Android build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git zip unzip openjdk-17-jdk python3-pip python3-venv \
+            python3-virtualenv autoconf libtool pkg-config zlib1g-dev \
+            libncurses5-dev libncursesw5-dev libtinfo6 cmake \
+            libffi-dev libssl-dev automake autopoint gettext
+
+      - name: Create Python build environment
+        run: |
+          python3 -m venv "$HOME/buildozer-venv"
+          "$HOME/buildozer-venv/bin/python" -m pip install --upgrade pip wheel setuptools
+          "$HOME/buildozer-venv/bin/pip" install buildozer cython==0.29.36
+
       - name: Build Android APK
-        id: buildozer
-        uses: ArtemSBulgakov/buildozer-action@v1
-        with:
-          workdir: Dinosaur_Adventure_Android_Ready
-          command: buildozer android debug
-          buildozer_version: stable
+        working-directory: Dinosaur_Adventure_Android_Ready
+        env:
+          PATH: /home/runner/buildozer-venv/bin:/usr/local/bin:/usr/bin:/bin
+        run: |
+          yes | buildozer android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
