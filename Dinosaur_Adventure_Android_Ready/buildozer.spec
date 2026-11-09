@@ -21,14 +21,16 @@ android.minapi = 24
 android.ndk = 29
 android.ndk_api = 24
 
-# Build the first test APK for modern 64-bit Android phones only.
+# First test build for modern 64-bit Android phones.
 android.archs = arm64-v8a
 
 android.accept_sdk_license = True
 android.logcat_filters = *:S python:D SDL:D
 
+# Use SDL2 and the uploaded local pygame-ce recipe.
 p4a.bootstrap = sdl2
 p4a.branch = develop
+p4a.local_recipes = recipes
 
 [buildozer]
 log_level = 2
