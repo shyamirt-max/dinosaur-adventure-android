@@ -27,5 +27,21 @@ jobs:
 
       - name: Install Buildozer
         run: |
-          python3 -m pip install --user --break-system-packages \
-            git+https://github.com/kivy/
+          python3 -m pip install --user --break-system-packages "git+https://github.com/kivy/buildozer.git" legacy-cgi setuptools wheel cython==0.29.34
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Build Android APK
+        working-directory: Dinosaur_Adventure_Android_Ready
+        env:
+          PATH: /home/runner/.local/bin:/usr/local/bin:/usr/bin:/bin
+        run: |
+          buildozer android clean
+          buildozer android debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: dinosaur-adventure-debug-apk
+          path: Dinosaur_Adventure_Android_Ready/bin/*.apk
+          if-no-files-found: error
+          retention-days: 14
