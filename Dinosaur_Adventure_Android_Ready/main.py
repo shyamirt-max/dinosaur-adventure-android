@@ -3200,9 +3200,20 @@ while running:
     # Password-free account screen. Choose an existing account or create a new one.
     if current_state in (GameState.ACCOUNT_NAME, GameState.ACCOUNT_PASSWORD):
         current_state=GameState.ACCOUNT_NAME
+
+        # SDL text input opens the Android on-screen keyboard and emits
+        # pygame.TEXTINPUT events. Calling it here also restores the keyboard
+        # after the Android activity is paused and resumed.
+        try:
+            pygame.key.start_text_input()
+            if hasattr(pygame.key, "set_text_input_rect"):
+                pygame.key.set_text_input_rect(pygame.Rect(180,355,300,52))
+        except (AttributeError, pygame.error):
+            pass
+
         screen.fill((12,25,48))
         title=font_title.render("CHOOSE YOUR ACCOUNT",True,(220,245,255)); screen.blit(title,title.get_rect(center=(SCREEN_WIDTH//2,48)))
-        help_text=font_sub.render("Each account keeps separate progress",True,(160,205,235)); screen.blit(help_text,help_text.get_rect(center=(SCREEN_WIDTH//2,82)))
+        help_text=font_sub.render("Tap the name box and type your account name",True,(160,205,235)); screen.blit(help_text,help_text.get_rect(center=(SCREEN_WIDTH//2,82)))
         account_buttons=[]; saved_accounts=sorted(accounts.values(),key=lambda item:item.get("name","").lower())
         for index,account_data in enumerate(saved_accounts[:8]):
             col=index%4; row=index//4; bx=45+col*190; by=115+row*100; saved_name=account_data.get("name","Player")
@@ -3211,8 +3222,8 @@ while running:
             pygame.draw.circle(screen,(235,245,255),(bx+24,by+22),9); pygame.draw.arc(screen,(235,245,255),(bx+13,by+29,22,18),3.2,6.2,3)
             account_buttons.append((button,saved_name))
         label=font_ui.render("CREATE A NEW ACCOUNT",True,(255,225,120)); screen.blit(label,label.get_rect(center=(SCREEN_WIDTH//2,330)))
-        box=pygame.Rect(180,355,300,52); pygame.draw.rect(screen,WHITE,box,border_radius=9); pygame.draw.rect(screen,(70,210,255),box,2,border_radius=9)
-        shown=account_name_input or "Type new account name"; screen.blit(font_ui.render(shown,True,BLACK if account_name_input else (130,130,140)),(box.x+12,box.y+14))
+        box=pygame.Rect(180,355,300,52); pygame.draw.rect(screen,WHITE,box,border_radius=9); pygame.draw.rect(screen,(70,210,255),box,3,border_radius=9)
+        shown=account_name_input or "Tap here to type"; screen.blit(font_ui.render(shown,True,BLACK if account_name_input else (130,130,140)),(box.x+12,box.y+14))
         create=Button(500,355,165,52,"CREATE",(50,155,95)); create.draw(screen)
         if account_message:
             msg=font_sub.render(account_message,True,RED); screen.blit(msg,msg.get_rect(center=(SCREEN_WIDTH//2,445)))
@@ -3221,20 +3232,51 @@ while running:
             for button,saved_name in account_buttons:
                 if button.is_clicked(mouse_pos,event): selected=saved_name; break
             if selected:
+                try: pygame.key.stop_text_input()
+                except (AttributeError, pygame.error): pass
                 activate_account(selected); account_name_input=""; account_message=""; current_state=GameState.LOBBY; break
+
             requested=False
-            if event.type==pygame.KEYDOWN:
-                if event.key==pygame.K_BACKSPACE: account_name_input=account_name_input[:-1]
-                elif event.key==pygame.K_RETURN: requested=True
-                elif event.unicode.isprintable() and len(account_name_input)<15: account_name_input+=event.unicode
-            elif create.is_clicked(mouse_pos,event): requested=True
+
+            # Touching the box explicitly requests the Android soft keyboard.
+            touch_pos=None
+            if event.type==pygame.MOUSEBUTTONDOWN and event.button==1:
+                touch_pos=event.pos
+            elif event.type==pygame.FINGERDOWN:
+                touch_pos=(int(event.x*SCREEN_WIDTH),int(event.y*SCREEN_HEIGHT))
+            if touch_pos is not None and box.collidepoint(touch_pos):
+                try: pygame.key.start_text_input()
+                except (AttributeError, pygame.error): pass
+
+            # Android keyboards send committed characters as TEXTINPUT.
+            if event.type==pygame.TEXTINPUT:
+                for character in event.text:
+                    if character.isprintable() and len(account_name_input)<15:
+                        account_name_input+=character
+            elif event.type==pygame.KEYDOWN:
+                if event.key==pygame.K_BACKSPACE:
+                    account_name_input=account_name_input[:-1]
+                elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                    requested=True
+                # Desktop fallback. Avoid duplicating Android TEXTINPUT text.
+                elif not os.environ.get("ANDROID_PRIVATE") and event.unicode.isprintable() and len(account_name_input)<15:
+                    account_name_input+=event.unicode
+            elif create.is_clicked(mouse_pos,event):
+                requested=True
+
             if requested:
                 name=account_name_input.strip()
-                if not name: account_message="Please enter an account name."
+                if not name:
+                    account_message="Please enter an account name."
                 elif name.lower() in accounts:
+                    try: pygame.key.stop_text_input()
+                    except (AttributeError, pygame.error): pass
                     activate_account(accounts[name.lower()].get("name",name)); account_name_input=""; account_message=""; current_state=GameState.LOBBY
                 else:
-                    accounts[name.lower()]={"name":name}; save_accounts(); activate_account(name); account_name_input=""; account_message=""; current_state=GameState.LOBBY
+                    accounts[name.lower()]={"name":name}; save_accounts()
+                    try: pygame.key.stop_text_input()
+                    except (AttributeError, pygame.error): pass
+                    activate_account(name); account_name_input=""; account_message=""; current_state=GameState.LOBBY
                 break
 
     # 1. Lobby State
