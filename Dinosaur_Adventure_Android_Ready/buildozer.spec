@@ -8,7 +8,7 @@ source.include_exts = py,png,jpg,jpeg,webp,wav,ogg,mp3,json,ttf
 source.exclude_dirs = .git,.github,.buildozer,bin,__pycache__,venv,.venv,recipes
 
 version = 1.0.0
-requirements = python3,pygame
+requirements = python3==3.10.12,hostpython3==3.10.12,pygame
 
 orientation = landscape
 fullscreen = 1
