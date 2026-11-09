@@ -5,10 +5,10 @@ package.domain = com.tarun.games
 
 source.dir = .
 source.include_exts = py,png,jpg,jpeg,webp,wav,ogg,mp3,json,ttf
-source.exclude_dirs = .git,.github,.buildozer,bin,__pycache__,venv,.venv
+source.exclude_dirs = .git,.github,.buildozer,bin,__pycache__,venv,.venv,recipes
 
 version = 1.0.0
-requirements = python3,pygame-ce
+requirements = python3,pygame
 
 orientation = landscape
 fullscreen = 1
@@ -27,10 +27,8 @@ android.archs = arm64-v8a
 android.accept_sdk_license = True
 android.logcat_filters = *:S python:D SDL:D
 
-# Use SDL2 and the uploaded local pygame-ce recipe.
 p4a.bootstrap = sdl2
 p4a.branch = develop
-p4a.local_recipes = recipes
 
 [buildozer]
 log_level = 2
