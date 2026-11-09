@@ -1545,7 +1545,7 @@ def environment_palette(night_strength):
 
 def draw_parallax_background(ground_colour, night_strength=0.0):
     global parallax_offset
-    parallax_offset = (parallax_offset + obstacle_speed * 0.18) % SCREEN_WIDTH
+    parallax_offset = (parallax_offset + obstacle_speed * 0.18 * frame_scale) % SCREEN_WIDTH
     now = pygame.time.get_ticks()
     sky, ground, accent = environment_palette(night_strength)
     for row in range(0, 461, 3):
@@ -3174,6 +3174,12 @@ def trophy_rank(count):
 # Main Game Loop
 running = True
 while running:
+    # Normalize movement to the intended 60 FPS speed. On slower Android
+    # devices, one rendered frame may take longer, so movement must cover
+    # proportionally more distance instead of slowing the whole game.
+    frame_scale = clock.get_time() / (1000.0 / FPS)
+    frame_scale = max(0.5, min(3.0, frame_scale if frame_scale > 0 else 1.0))
+
     mouse_pos = pygame.mouse.get_pos()
     events = pygame.event.get()
 
@@ -3714,8 +3720,8 @@ while running:
         else:
             boss_x=int(SCREEN_WIDTH+220+(745-(SCREEN_WIDTH+220))*eased); boss_y=335
         if arena_is_jumping and not intro_active:
-            arena_dino_y += arena_dino_velocity
-            arena_dino_velocity += 0.65
+            arena_dino_y += arena_dino_velocity * frame_scale
+            arena_dino_velocity += 0.65 * frame_scale
             if arena_dino_y >= 390:
                 arena_dino_y=390.0; arena_dino_velocity=0.0; arena_is_jumping=False
         # Attack animation temporarily pushes or lifts the boss.
@@ -4331,8 +4337,8 @@ while running:
 
         was_jumping = is_jumping
         if is_jumping:
-            dino_y += dino_velocity_y
-            dino_velocity_y += GRAVITY
+            dino_y += dino_velocity_y * frame_scale
+            dino_velocity_y += GRAVITY * frame_scale
             if dino_y >= 400:
                 dino_y = 400
                 is_jumping = False
@@ -4348,7 +4354,7 @@ while running:
 
         # Normal obstacles stop completely while the boss battle is active.
         if not boss_battle_active:
-            obstacle_x -= obstacle_speed
+            obstacle_x -= obstacle_speed * frame_scale
         else:
             obstacle_x = SCREEN_WIDTH + 300
 
